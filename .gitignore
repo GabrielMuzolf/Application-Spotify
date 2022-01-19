@@ -1,0 +1,16 @@
+# IDE configuration
+.vscode
+
+# Packaged app
+*.app
+
+# AL compiler packages
+.alpackages
+
+# Debugger objects folder
+.debug
+
+# favorites extension config file
+# https://marketplace.visualstudio.com/items?itemName=howardzuo.vscode-favorites
+.vscfavoriterc
+
