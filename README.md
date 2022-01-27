@@ -1,4 +1,4 @@
-# IT integro project
+# Gabriel Muzolf project
 ## Introduction
 TODO: Briefly describe the project and the functionality it provides
 
