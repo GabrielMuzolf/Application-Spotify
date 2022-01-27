@@ -1,29 +1,32 @@
 {
-  "id": "6f9c7304-9800-4b16-bf39-f8507c5f449b",
-  "name": "Spotify-App",
-  "publisher": "Default publisher",
-  "version": "1.0.0.0",
-  "brief": "",
-  "description": "",
-  "privacyStatement": "",
-  "EULA": "",
-  "help": "",
-  "url": "",
-  "logo": "",
-  "dependencies": [],
-  "screenshots": [],
-  "platform": "1.0.0.0",
-  "application": "19.0.0.0",
-  "idRanges": [
-    {
-      "from": 50100,
-      "to": 50149
-    }
-  ],
-  "resourceExposurePolicy": {
-    "allowDebugging": true,
-    "allowDownloadingSource": false,
-    "includeSourceInSymbolFile": false
-  },
-  "runtime": "8.0"
+    "id": "6f9c7304-9800-4b16-bf39-f8507c5f449b",
+    "name": "Spotify-App",
+    "publisher": "Gabriel Muzolf",
+    "version": "1.0.0.0",
+    "brief": "",
+    "description": "",
+    "privacyStatement": "",
+    "EULA": "",
+    "help": "",
+    "url": "",
+    "logo": "",
+    "dependencies": [{
+        "id": "7dd4bfe8-fa8b-46d0-94ea-d571a0816c93",
+        "name": "Request-App",
+        "publisher": "Gabriel Muzolf",
+        "version": "1.0.0.0"
+    }],
+    "screenshots": [],
+    "platform": "1.0.0.0",
+    "application": "20.0.0.0",
+    "idRanges": [{
+        "from": 50502,
+        "to": 50510
+    }],
+    "resourceExposurePolicy": {
+        "allowDebugging": true,
+        "allowDownloadingSource": false,
+        "includeSourceInSymbolFile": false
+    },
+    "runtime": "8.0"
 }
