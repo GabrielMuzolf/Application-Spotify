@@ -1,0 +1,227 @@
+trigger:
+  - release/*
+  - master
+  
+variables:
+  - group: Credentials
+
+pool: Default
+
+resources:
+  repositories:
+    - repository: Scripts
+      type: git
+      name: IntDevOpsScripts/ALScripts
+  pipelines:
+    - pipeline: LicenseApp
+      project: AppLicenseManagement
+      source: Application
+      branch: master
+    
+    
+jobs:
+  - job: PrepareEnvironment
+    steps:
+    - checkout: self
+    - checkout: Scripts
+
+    - task: PowerShell@2
+      name: GetAppVersion
+      displayName: Get app version from app.json
+      inputs:
+        targetType: inline
+        script: |
+          $buildNumber = $(Build.BuildNumber).toString()
+          $AppVersion = $buildNumber.Split(",")[0]
+          $buildNumber = $buildNumber.Split(",")[1]
+          Write-Host "##vso[task.setvariable variable=buildNumber;isOutput=true]$buildNumber"
+          Write-Host "##vso[task.setvariable variable=AppVersion;isOutput=true]$AppVersion"
+
+    # - task: PowerShell@2
+    #   displayName: Install DevOpsToolkit
+    #   inputs:
+    #     targetType: filePath
+    #     filePath: $(Build.SourcesDirectory)/ALScripts/src/Install-DevOpsToolkit.ps1
+    #     failOnStderr: true
+
+  - job: Build
+    dependsOn: PrepareEnvironment
+    variables:
+      AppVersion: $[ dependencies.PrepareEnvironment.outputs['GetBuildNumber.AppVersion'] ]
+      BuildNo: $[ dependencies.PrepareEnvironment.outputs['GetBuildNumber.buildNumber'] ]
+      ArtifactsTempDir: Artifacts
+      RuntimePackagesDir: Artifacts/runtime_packages
+      SymbolsDir: symbols
+
+    strategy:
+      matrix:
+        Current:
+          artifactString: 'bcartifacts/onprem//w1/Latest'
+          InsiderImage: false
+          PublishArtifacts: true
+          ContainerName: current-$(Build.BuildId)
+        NextMinor:
+         artifactString: 'bcinsider/sandbox//w1/SecondToLastMajor'
+         InsiderImage: true
+         PublishArtifacts: false
+         ContainerName: nextminor-$(Build.BuildId)
+        NextMajor:
+          artifactString: 'bcinsider/sandbox//w1/Latest'
+          InsiderImage: true
+          PublishArtifacts: false
+          ContainerName: nextmajor-$(Build.BuildId)
+
+    steps:
+    - checkout: self
+    - checkout: Scripts
+
+    - download: LicenseApp
+
+    - task: PowerShell@2
+      displayName: Set BuildNumber
+      inputs:
+        targetType: inline
+        script: Write-Host "##vso[build.updatebuildnumber]$(AppVersion).$(BuildNo)-[$(Build.SourceBranchName)]"
+
+    - task: DownloadSecureFile@1
+      displayName: Download NAV license
+      name: license
+      inputs:
+        secureFile: LICENSE.flf
+  
+    - task: PowerShell@2
+      displayName: Create build container
+      inputs:
+        targetType: filePath
+        filePath: $(Build.SourcesDirectory)/ALScripts/src/Create-BuildContainer.ps1
+        arguments: '-ContainerName $(ContainerName) -artifact -artifactString $(artifactString) -InsiderImage $(InsiderImage) -InsiderToken "$(insiderToken)" -LicenseFile $(license.secureFilePath) -Credential (New-Object System.Management.Automation.PSCredential ("$(UserName)", (ConvertTo-SecureString "$(UserPassword)" -AsPlainText -Force))) -TestCompanyName $(TestCompanyName)'
+        failOnStderr: true
+
+    - task: PowerShell@2
+      displayName: Create artifacs temp directories
+      inputs:
+        targetType: inline
+        script: |
+          mkdir $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(ArtifactsTempDir)
+          mkdir $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(RuntimePackagesDir)
+          mkdir $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(SymbolsDir)
+
+    - task: PowerShell@2
+      displayName: Update Build Number in app.json files
+      inputs:
+        filePath:  $(Build.SourcesDirectory)/ALScripts/src/Update-BuildNumberInAppJsonFile.ps1
+        arguments: '-AppsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name) -BuildNumber $(BuildNo)'
+
+    - task: PowerShell@2
+      displayName: Install License App
+      inputs:
+        targetType: inline
+        script: |
+          Publish-BcContainerApp -appFile (Get-ChildItem -Path "$(Pipeline.Workspace)\LicenseApp" -Recurse -Depth 1 -Filter "IT.integro sp. z o.o._License Library App_*.app").FullName -containerName $(ContainerName) -skipVerification -sync
+          Install-BcContainerApp -containerName $(ContainerName) -appName "License Library App"
+
+    - task: PowerShell@2
+      displayName: Compile and publish applications
+      inputs:
+        targetType: filePath
+        filePath:  $(Build.SourcesDirectory)/ALScripts/src/Compile-AndPublishApplication.ps1
+        arguments: '-ContainerName $(ContainerName) -AppsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)/Apps -ArtifactsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(ArtifactsTempDir) -SymbolsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(SymbolsDir) -Credential (New-Object System.Management.Automation.PSCredential ("$(UserName)", (ConvertTo-SecureString "$(UserPassword)" -AsPlainText -Force)))'
+        failOnStderr: true
+  
+    - task: PowerShell@2
+      displayName: Compile and publish test applications
+      inputs:
+        targetType: filePath
+        filePath:  $(Build.SourcesDirectory)/ALScripts/src/Compile-AndPublishApplication.ps1
+        arguments: '-ContainerName $(ContainerName) -AppsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)/Tests -ArtifactsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(ArtifactsTempDir) -SymbolsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(SymbolsDir) -Credential (New-Object System.Management.Automation.PSCredential ("$(UserName)", (ConvertTo-SecureString "$(UserPassword)" -AsPlainText -Force))) -NoDependency'
+        failOnStderr: true
+  
+    - task: PowerShell@2
+      displayName: Run automated tests
+      inputs:
+        targetType: filePath
+        filePath:  $(Build.SourcesDirectory)/ALScripts/src/Run-Tests.ps1
+        arguments: '-ContainerName $(ContainerName) -TestResultFilePath $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(ArtifactsTempDir)\TestResults.xml -TestAppsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)\Tests -TestCompanyName $(TestCompanyName) -Credential (New-Object System.Management.Automation.PSCredential ("$(UserName)", (ConvertTo-SecureString "$(UserPassword)" -AsPlainText -Force)))'
+        
+    - task: PublishTestResults@2
+      displayName: Publish test results
+      inputs:
+        testResultsFormat: XUnit
+        searchFolder: $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(ArtifactsTempDir)
+        testResultsFiles: '*.xml'
+        testRunTitle: '$(ContainerName)-$(Build.BuildNumber)'
+  
+    - task: PowerShell@2
+      displayName: Get apps runtime packages
+      inputs:
+        targetType: filePath
+        filePath:  $(Build.SourcesDirectory)/ALScripts/src/Get-AppRuntimePackage.ps1
+        arguments: '-ContainerName $(ContainerName) -AppsDirectory $(Build.SourcesDirectory)\$(Build.Repository.Name)\Apps -ArtifactsPath $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(RuntimePackagesDir)'
+        failOnStderr: true
+      condition: and(succeeded(), eq(variables['PublishArtifacts'], true), ne(variables['Build.Reason'], 'PullRequest'))
+  
+    - task: CopyFiles@1
+      displayName: Copy .app files to artifact staging directory
+      inputs:
+        Contents: '**/*.app'
+        SourceFolder: $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(ArtifactsTempDir)
+        TargetFolder: $(Build.ArtifactStagingDirectory)
+      condition: and(succeeded(), eq(variables['PublishArtifacts'], true), ne(variables['Build.Reason'], 'PullRequest'))
+
+    - task: AzureKeyVault@1
+      displayName: Download cert and password
+      inputs:
+        azureSubscription: 'DevOpsCore_ARM'
+        KeyVaultName: 'ITDevOps'
+        SecretsFilter: 'CodeSignCert,CodeSignCertPassword'
+        RunAsPreJob: false
+      condition: and(succeeded(), eq(variables['PublishArtifacts'], true), ne(variables['Build.Reason'], 'PullRequest'))
+
+    - task: PowerShell@2
+      displayName: Generate pfx file
+      inputs:
+        targetType: filePath
+        filePath:  $(Build.SourcesDirectory)/ALScripts/src/New-PfxFile.ps1
+        arguments: '-CodeSignCert $(CodeSignCert) -CodeSignCertPassword $(CodeSignCertPassword)'
+        failOnStderr: true
+      condition: and(succeeded(), eq(variables['PublishArtifacts'], true), ne(variables['Build.Reason'], 'PullRequest'))
+    - task: PowerShell@2
+      displayName: Sign apps
+      inputs:
+        targetType: filePath
+        filePath:  $(Build.SourcesDirectory)/ALScripts/src/Sign-AppFiles.ps1
+        arguments: '-appsFolder $(Build.ArtifactStagingDirectory) -pfxFile ([Environment]::GetFolderPath("Desktop") + "\CodeSignCert.pfx") -pfxPassword $(CodeSignCertPassword)'
+        failOnStderr: true
+      condition: and(succeeded(), eq(variables['PublishArtifacts'], true), ne(variables['Build.Reason'], 'PullRequest'))
+        
+
+    - task: PowerShell@2
+      displayName: Remove .pfx file
+      inputs:
+        targetType: inline
+        script: |
+          Remove-Item ([Environment]::GetFolderPath("Desktop") + "\CodeSignCert.pfx") -Force
+      condition: and(succeeded(), eq(variables['PublishArtifacts'], true), ne(variables['Build.Reason'], 'PullRequest'))
+
+    - task: PublishPipelineArtifact@1
+      displayName: Publish artifact
+      inputs:
+        targetPath: $(Build.ArtifactStagingDirectory)
+        artifactName: '$(AppVersion).$(BuildNo)'
+      condition: and(succeeded(), eq(variables['PublishArtifacts'], true), ne(variables['Build.Reason'], 'PullRequest'))
+
+    - task: DeleteFiles@1
+      displayName: Delete LicenseApp artifact folder
+      inputs:
+        SourceFolder: '$(Pipeline.Workspace)\LicenseApp'
+        Contents: '**/*'
+        RemoveSourceFolder: true
+      condition: always()
+  
+    - task: PowerShell@2
+      displayName: Clean resources
+      inputs:
+        targetType: filePath
+        filePath: $(Build.SourcesDirectory)/ALScripts/src/Clean-Resources.ps1
+        arguments: '-ContainerName $(ContainerName)'
+      condition: always()

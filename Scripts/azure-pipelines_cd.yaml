@@ -1,0 +1,217 @@
+### Ujednolicić nazwę licencji
+trigger: none
+
+pool: Default
+
+variables:
+  - name: country
+    value: proto
+  - name: storageAccount
+    value: 'itibcartifacts'
+  - name: ContainerName
+    value: BC$(Build.BuildId)
+  - name: artifactString
+    value: 'bcartifacts/onprem//w1/Latest'
+  - group: Credentials
+  - group: Sharepoint
+
+resources:
+  pipelines:
+  - pipeline: SourceObjects
+    project: DevOpsPrototyp
+    source: Application
+    trigger:
+      branches:
+      - master
+
+  repositories:
+  - repository: Scripts
+    type: git
+    name: IntDevOpsScripts/ALScripts
+stages:
+- stage: Publish
+  jobs:
+    - job: PrepareEnvironment
+      condition: startsWith(variables['resources.pipeline.SourceObjects.sourceBranch'], 'refs/heads/release')
+      steps:
+      - checkout: self
+      - checkout: Scripts
+
+      - task: PowerShell@2
+        name: GetAppVersion
+        displayName: Get app version from app.json
+        inputs:
+          targetType: inline
+          script: |
+            $manifestContent = Get-Content -Path $(Build.SourcesDirectory)\$(Build.Repository.Name)\Apps\**\app.json | ConvertFrom-Json
+            $version = $manifestContent.version
+            $appVersion = $version.Substring(0,$version.LastIndexOf('.'))
+            Write-Host "##vso[task.setvariable variable=appVersion;isOutput=true]$appVersion"
+
+    - job: BuildContainerArtifact
+      condition: startsWith(variables['resources.pipeline.SourceObjects.sourceBranch'], 'refs/heads/release')
+      dependsOn: PrepareEnvironment
+      variables:
+        AppVersion: $[ dependencies.PrepareEnvironment.outputs['GetAppVersion.appVersion'] ]
+        BuildNo: $[counter(variables['AppVersion'], 0)]
+        SymbolsDir: Symbols
+
+      steps:
+      - checkout: self
+      - checkout: Scripts
+      
+      - download: SourceObjects
+      
+      - task: PowerShell@2
+        displayName: Set BuildNumber
+        inputs:
+          targetType: inline
+          script: Write-Host "##vso[build.updatebuildnumber]$(AppVersion).$(BuildNo)-[$(Build.SourceBranchName)]"
+
+      - task: DownloadSecureFile@1
+        displayName: Download NAV license
+        name: license
+        inputs:
+          secureFile: LICENSE_BC17.flf
+    
+      - task: PowerShell@2
+        displayName: Create build container
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/Create-BuildContainer.ps1
+          arguments: '-ContainerName $(ContainerName) -artifact -artifactString $(artifactString) -LicenseFile $(license.secureFilePath) -Credential (New-Object System.Management.Automation.PSCredential ("$(UserName)", (ConvertTo-SecureString "$(UserPassword)" -AsPlainText -Force)))'
+          failOnStderr: true
+
+      - task: PowerShell@2
+        displayName: Create artifacs temp directories
+        inputs:
+          targetType: inline
+          script: |
+            mkdir $(Build.SourcesDirectory)\$(Build.Repository.Name)\$(SymbolsDir)
+
+      - task: PowerShell@2
+        displayName: Get Manifest parameters
+        inputs:
+          targetType: inline
+          script: |
+            $url = Get-BcContainerArtifactUrl -containerName '$(ContainerName)'
+            $blobPrefix = $url.Split('/')[4]
+            $NavVersion = $blobPrefix.Split('.')[0]
+            echo "##vso[task.setvariable variable=artifactUrl]$url"
+            echo "##vso[task.setvariable variable=BlobPrefix]$blobPrefix"
+            echo "##vso[task.setvariable variable=NavVersion]$NavVersion"
+
+      - task: PowerShell@2
+        displayName: Install License App
+        inputs:
+          targetType: inline
+          script: |
+            Publish-BcContainerApp -appFile (Get-ChildItem -Path "$(Pipeline.Workspace)\LicenseApp" -Recurse -Depth 1 -Filter "IT.integro sp. z o.o._License Library App_*.app").FullName -containerName $(ContainerName) -skipVerification -sync
+            Install-BcContainerApp -containerName $(ContainerName) -appName "License Library App"
+            
+      - task: PowerShell@2
+        displayName: Install Application
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/Install-ApplicationsLocally.ps1  
+          arguments: '-appsPath "$(Pipeline.Workspace)\SourceObjects\*\runtime_packages\" -jsonPath "$(Pipeline.Workspace)\SourceObjects\*\" -containerName "$(ContainerName)" -RuntimePackages'
+          failOnStderr: true
+
+      - task: PowerShell@2
+        displayName: Cleanup the database for release
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/Export-Database.ps1
+          arguments: '-ContainerName $(ContainerName) -BackupPath "$(Build.SourcesDirectory)\$(Build.Repository.Name)\backup" -DatabaseName CRONUS'
+      
+      - task: PowerShell@2
+        displayName: Generate Artifact manifest.json file
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/New-ManifestJSON.ps1
+          arguments: '-ContainerName $(ContainerName) -platformUrl ($env:ARTIFACTURL.Replace("w1","platform")) -nav $(NavVersion) -BackupPath "$(Build.SourcesDirectory)\$(Build.Repository.Name)\backup" -country $(Country)'
+
+      - task: ArchiveFiles@2
+        inputs:
+          rootFolderOrFile: '$(Build.SourcesDirectory)\$(Build.Repository.Name)\backup'
+          includeRootFolder: false
+          archiveType: 'zip'
+          archiveFile: '$(Build.ArtifactStagingDirectory)/$(Country).zip'
+          replaceExistingArchive: true
+
+      - task: AzureFileCopy@4
+        inputs:
+          SourcePath: '$(Build.ArtifactStagingDirectory)/$(Country).zip'
+          azureSubscription: 'DevOpsCore_ARM'
+          Destination: 'AzureBlob'
+          storage: $(storageAccount)
+          ContainerName: 'onprem'
+          # BlobPrefix: '$(BlobPrefix)/$(Country)_$(AppVersion)'
+          BlobPrefix: '$(BlobPrefix)/$(Country)'
+
+      - task: PowerShell@2
+        displayName: Add Artifact List Item
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/Add-ArtifactListItem.ps1
+          arguments: '-ContainerName $(ContainerName) -storageAccount $(storageAccount) -Url $(Url) -BlobPrefix "$(BlobPrefix)" -country "$(Country)_$(AppVersion)" -ReleaseNumber "$(AppVersion)" -Credentials (New-Object System.Management.Automation.PSCredential ("$(SharepointLogin)", (ConvertTo-SecureString "$(SharepointPassword)" -AsPlainText -Force)))'
+
+      - task: PowerShell@2
+        condition: always()
+        displayName: Clean build resources
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/Clean-Resources.ps1
+          arguments: '-ContainerName $(ContainerName)'
+
+    - job: SendToSharepoint
+      steps:
+      - checkout: self
+      - checkout: Scripts
+
+      - download: SourceObjects
+
+      - task: PowerShell@2
+        displayName: Send Artifacts to Sharepoint
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/Send-ArtifactToSharepoint.ps1
+          arguments: '-ArtifactPath "$(Pipeline.Workspace)/SourceObjects" -Url $(Url) -documentLibraryName "Releases/$(Folder)" -Credentials (New-Object System.Management.Automation.PSCredential ("$(SharepointLogin)", (ConvertTo-SecureString "$(SharepointPassword)" -AsPlainText -Force)))'
+        condition: startsWith(variables['resources.pipeline.SourceObjects.sourceBranch'], 'refs/heads/release')
+
+      - task: PowerShell@2
+        displayName: Send Insider Artifacts to Sharepoint
+        inputs:
+          targetType: filePath
+          filePath: $(Build.SourcesDirectory)/ALScripts/src/Send-ArtifactToSharepoint.ps1
+          arguments: '-ArtifactPath "$(Pipeline.Workspace)/SourceObjects" -Url $(Url) -documentLibraryName "Insider Builds/$(Folder)" -Credentials (New-Object System.Management.Automation.PSCredential ("$(SharepointLogin)", (ConvertTo-SecureString "$(SharepointPassword)" -AsPlainText -Force)))'
+        condition: eq(variables['resources.pipeline.SourceObjects.sourceBranch'], 'refs/heads/master')
+
+
+      - task: PowerShell@2
+        condition: always()
+        displayName: Cleanup Artifacts
+        inputs:
+          targetType: inline
+          script: Remove-Item -Recurse -Force -Path $(Pipeline.Workspace)/SourceObjects
+  # - stage: TEST
+  #   jobs:
+  #   - deployment: Deploy_TEST
+  #     displayName: Deploy to TEST environment
+  #     environment: TEST.WIN-G658169FCJ3
+  #     strategy:
+  #       runOnce:
+  #         deploy:
+  #           steps:
+  #           - download: SourceObjects
+  #           - task: PowerShell@2
+  #             inputs:
+  #               targetType: 'inline'
+  #               script: |
+  #                 Import-Module "C:\Program Files\Microsoft Dynamics 365 Business Central\*\Service\Microsoft.Dynamics.Nav.Management.dll"
+  #                 Import-Module "C:\Program Files\Microsoft Dynamics 365 Business Central\*\Service\Microsoft.Dynamics.Nav.Apps.Management.dll"
+
+  #                 Publish-NavApp -ServerInstance BC160 -Path (Get-ChildItem -Path "$(Pipeline.Workspace)\SourceObjects\" -Filter "*Polish Functionality - Starter Pack*.app" -Depth 1 -Recurse).FullName -SkipVerification;
+  #                 Sync-NavApp -ServerInstance BC160 -Name "Polish Functionality - Starter Pack"
+  #                 Install-NavApp -ServerInstance BC160 -Name "Polish Functionality - Starter Pack";
+  #               failOnStderr: true
