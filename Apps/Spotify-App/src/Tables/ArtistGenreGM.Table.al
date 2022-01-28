@@ -4,12 +4,12 @@ table 50504 "Artist Genre GM"
 
     fields
     {
-        field(1; Artist; Text[100])
+        field(1; "Artist Id"; Text[100])
         {
             DataClassification = CustomerContent;
             TableRelation = "Artist GM";
         }
-        field(2; Genre; Text[50])
+        field(2; "Genre Name"; Text[50])
         {
             DataClassification = CustomerContent;
             TableRelation = "Genre GM";
@@ -18,7 +18,7 @@ table 50504 "Artist Genre GM"
 
     keys
     {
-        key(Key1; Artist, Genre)
+        key(Key1; "Artist Id", "Genre Name")
         {
             Clustered = true;
         }

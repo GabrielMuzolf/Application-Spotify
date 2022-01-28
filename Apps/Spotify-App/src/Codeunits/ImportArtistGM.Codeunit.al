@@ -5,20 +5,18 @@ codeunit 50506 "Import Artist GM"
 {
     var
         JSONUtilityGM: Codeunit "JSON Utility GM";
+        Artist: JsonObject;
         ArtistId: Text[100];
 
     internal procedure ImportArtist(ArtistId: Text[100]; IncludeArtistAlbums: Boolean)
-    var
-        Artist: JsonObject;
     begin
-        // What if artist exist? Replace? Modify?
-        // get info about artist from spotify and insert record
-        // insert dependency artist | genre to have search table
         // get info about albums 
         // for each album get tracks
         SetArtistId(ArtistId);
-        Artist := GetArtist();
-        ImportArtist(Artist);
+        SetArtist();
+        DeleteArtistIfExists();
+        ImportArtist();
+        ImportArtistGenres();
     end;
 
     local procedure SetArtistId(_ArtistId: Text[100])
@@ -26,7 +24,26 @@ codeunit 50506 "Import Artist GM"
         ArtistId := _ArtistId;
     end;
 
-    local procedure GetArtist() Artist: JsonObject
+    local procedure DeleteArtistIfExists()
+    var
+        ArtistGM: Record "Artist GM";
+    begin
+        ArtistGM.SetRange(Id, ArtistId);
+        if not ArtistGM.FindFirst() then exit;
+        ArtistGM.Delete();
+        DeleteArtistGenres();
+    end;
+
+    local procedure DeleteArtistGenres()
+    var
+        ArtistGenreGM: Record "Artist Genre GM";
+    begin
+        ArtistGenreGM.SetRange("Artist Id", ArtistId);
+        if not ArtistGenreGM.FindSet() then exit;
+        ArtistGenreGM.DeleteAll();
+    end;
+
+    local procedure SetArtist()
     var
         ResponseBody: Text;
     begin
@@ -56,20 +73,20 @@ codeunit 50506 "Import Artist GM"
         HttpGM.AddHeader('Authorization', 'Bearer ' + Token);
     end;
 
-    local procedure ImportArtist(Artist: JsonObject)
+    local procedure ImportArtist()
     var
         ArtistGM: Record "Artist GM";
     begin
         ArtistGM.Init();
         ArtistGM.Id := CopyStr(ArtistId, 1, 100);
         ArtistGM.Name := CopyStr(JSONUtilityGM.GetValueAsText(Artist, 'name'), 1, 100);
-        SetArtistPicture(ArtistGM, Artist);
+        SetArtistPicture(ArtistGM);
         ArtistGM.Followers := JSONUtilityGM.GetValueAsIntegerFromPath(Artist, '$.followers.total');
         ArtistGM.Popularity := JSONUtilityGM.GetValueAsInteger(Artist, 'popularity');
         ArtistGM.Insert();
     end;
 
-    local procedure SetArtistPicture(var ArtistGM: Record "Artist GM"; Artist: JsonObject)
+    local procedure SetArtistPicture(var ArtistGM: Record "Artist GM")
     var
         MediaUtilityGM: Codeunit "Media Utility GM";
         Images: JsonArray;
@@ -84,5 +101,31 @@ codeunit 50506 "Import Artist GM"
     local procedure GetPictureUrl(Picture: JsonObject): Text
     begin
         exit(JSONUtilityGM.GetValueAsText(Picture, 'url'));
+    end;
+
+    local procedure ImportArtistGenres()
+    var
+        Genres: JsonArray;
+        Genre: JsonToken;
+        GenreName: JsonValue;
+        i: Integer;
+    begin
+        Genres := JSONUtilityGM.GetJSONArray(Artist, 'genres');
+        if Genres.Count() = 0 then exit;
+        for i := 0 to Genres.Count() - 1 do begin
+            Genres.Get(i, Genre);
+            GenreName := Genre.AsValue();
+            ImportArtistGenre(GenreName.AsText())
+        end;
+    end;
+
+    local procedure ImportArtistGenre(GenreName: Text)
+    var
+        ArtistGenreGM: Record "Artist Genre GM";
+    begin
+        ArtistGenreGM.Init();
+        ArtistGenreGM."Artist Id" := ArtistId;
+        ArtistGenreGM."Genre Name" := CopyStr(GenreName, 1, 50);
+        ArtistGenreGM.Insert();
     end;
 }
