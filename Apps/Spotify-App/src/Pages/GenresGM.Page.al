@@ -1,9 +1,9 @@
-page 50502 "Categories GM"
+page 50502 "Genres GM"
 {
     PageType = List;
     ApplicationArea = All;
     UsageCategory = Administration;
-    SourceTable = "Category GM";
+    SourceTable = "Genre GM";
     ModifyAllowed = false;
     DeleteAllowed = false;
     InsertAllowed = false;
@@ -12,19 +12,13 @@ page 50502 "Categories GM"
     {
         area(Content)
         {
-            repeater(Categories)
+            repeater(Genres)
             {
                 field(Name; Rec.Name)
                 {
                     ApplicationArea = All;
-                    ToolTip = 'Specifies category name';
+                    ToolTip = 'Specifies genre name';
                     Caption = 'Name';
-                }
-                field(Picture; Rec.Picture)
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies category picture';
-                    Caption = 'Picture';
                 }
             }
         }
@@ -34,15 +28,15 @@ page 50502 "Categories GM"
     {
         area(Processing)
         {
-            action("Import Categories")
+            action("Import Genres")
             {
                 ApplicationArea = All;
-                ToolTip = 'Run this action to import predefined Spitify categories';
+                ToolTip = 'Run this action to import predefined Spitify genres';
                 trigger OnAction()
                 var
-                    ImportCategoriesGM: Codeunit "Import Categories GM";
+                    ImportCategoriesGM: Codeunit "Import Genres GM";
                 begin
-                    ImportCategoriesGM.ImportCategories();
+                    ImportCategoriesGM.ImportGenres();
                 end;
             }
         }

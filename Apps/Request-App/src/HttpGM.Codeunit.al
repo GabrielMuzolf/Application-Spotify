@@ -6,6 +6,7 @@ codeunit 50500 "Http GM"
         HttpClient: HttpClient;
         HttpRequestMessage: HttpRequestMessage;
         HttpResponseMessage: HttpResponseMessage;
+        RequestFailedErr: Label 'API Request failed with code ''%1'' and respone phrase ''%2''.', Comment = '%1 = Status Code, %2 = Response Phrase';
 
     procedure SetHttpMethod(HttpMethod: Enum "Http Method GM")
     begin
@@ -87,5 +88,13 @@ codeunit 50500 "Http GM"
     begin
         HttpContent := HttpResponseMessage.Content();
         HttpContent.ReadAs(ResponseBody);
+    end;
+
+    procedure SendRequestAndGetBody(): Text
+    begin
+        SendRequest();
+        if not IsResponseSuccess() then
+            Error(RequestFailedErr, GetResponseStatusCode(), GetResponseStatusPhrase());
+        exit(GetResponseBody());
     end;
 }
