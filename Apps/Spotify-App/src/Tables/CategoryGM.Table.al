@@ -16,7 +16,7 @@ table 50502 "Category GM"
         {
 
         }
-        field(4; Picture; MediaSet)
+        field(4; Picture; Media)
         {
             DataClassification = CustomerContent;
         }

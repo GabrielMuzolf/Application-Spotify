@@ -1,20 +1,17 @@
 /// <summary>
-/// Codeunit used to generate token for the Spotify API
+/// Codeunit used to generate token for the Spotify API.
 /// </summary>
 codeunit 50502 "Generate Token GM"
 {
     var
         RequestFailedErr: Label 'API Request failed with code ''%1'' and respone phrase ''%2''.', Comment = '%1 = Status Code, %2 = Response Phrase';
-        InvalidResponseBodyErr: Label 'Error while converting body to JSON format.';
-        AccessTokenNotFoundErr: Label 'Response Body does not contain ''access_token'' element.';
 
     internal procedure GenerateToken(): Text
     var
         ResponseBody: JsonObject;
     begin
-        if not ResponseBody.ReadFrom(SendRequestToGetToken()) then
-            Error(InvalidResponseBodyErr);
-        exit(GetTokenFromResponse(ResponseBody));
+        ResponseBody.ReadFrom(SendRequestToGetToken());
+        exit(GetAccessTokenFromResponse(ResponseBody));
     end;
 
     local procedure SendRequestToGetToken(): Text
@@ -34,6 +31,7 @@ codeunit 50502 "Generate Token GM"
         HttpMethodGM: Enum "Http Method GM";
         ContentHeaders: Dictionary of [Text, Text];
     begin
+        Clear(HttpGM);
         ContentHeaders.Add('Content-Type', 'application/x-www-form-urlencoded');
         HttpGM.SetHttpMethod(HttpMethodGM::POST);
         HttpGM.SetUri('https://accounts.spotify.com/api/token');
@@ -41,13 +39,12 @@ codeunit 50502 "Generate Token GM"
         HttpGM.AddHeader('Authorization', 'Basic ' + Base64Convert.ToBase64('7a2dfb5d83ba4abaa8f356abf308ee1d:dc931551dc314762b35fcfdcd7f9939e'));
     end;
 
-    local procedure GetTokenFromResponse(ResponseBody: JsonObject): Text
+    local procedure GetAccessTokenFromResponse(ResponseBody: JsonObject): Text
     var
         AccessToken: JsonToken;
         TokenValue: JsonValue;
     begin
-        if not ResponseBody.Get('access_token', AccessToken) then
-            Error(AccessTokenNotFoundErr);
+        ResponseBody.Get('access_token', AccessToken);
         TokenValue := AccessToken.AsValue();
         exit(TokenValue.AsText());
     end;

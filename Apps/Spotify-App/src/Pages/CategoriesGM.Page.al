@@ -4,6 +4,9 @@ page 50502 "Categories GM"
     ApplicationArea = All;
     UsageCategory = Administration;
     SourceTable = "Category GM";
+    ModifyAllowed = false;
+    DeleteAllowed = false;
+    InsertAllowed = false;
 
     layout
     {
@@ -11,12 +14,6 @@ page 50502 "Categories GM"
         {
             repeater(Categories)
             {
-                field(Id; Rec.Id)
-                {
-                    ApplicationArea = All;
-                    ToolTip = 'Specifies category id';
-                    Caption = 'Id';
-                }
                 field(Name; Rec.Name)
                 {
                     ApplicationArea = All;
@@ -42,12 +39,12 @@ page 50502 "Categories GM"
                 ApplicationArea = All;
                 ToolTip = 'Run this action to import predefined Spitify categories';
                 trigger OnAction()
+                var
+                    ImportCategoriesGM: Codeunit "Import Categories GM";
                 begin
-                    Message('Import Categories');
+                    ImportCategoriesGM.ImportCategories();
                 end;
             }
         }
     }
-
-
 }

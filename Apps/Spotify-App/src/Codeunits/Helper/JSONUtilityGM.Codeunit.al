@@ -3,7 +3,7 @@
 /// </summary>
 codeunit 50504 "JSON Utility GM"
 {
-    procedure GetValueAsTextForKey(JsonObject: JsonObject; "Key": Text): Text
+    procedure GetValueAsText(JsonObject: JsonObject; "Key": Text): Text
     var
         JsonToken: JsonToken;
         JsonValue: JsonValue;
@@ -13,11 +13,19 @@ codeunit 50504 "JSON Utility GM"
         exit(JsonValue.AsText());
     end;
 
-    procedure GetJSONArrayForKey(JsonObject: JsonObject; "Key": Text): JsonArray
+    procedure GetJSONArray(JsonObject: JsonObject; "Key": Text): JsonArray
     var
         JsonToken: JsonToken;
     begin
         JsonObject.Get("Key", JsonToken);
+        exit(JsonToken.AsArray());
+    end;
+
+    procedure GetJSONArrayFromPath(JsonObject: JsonObject; Path: Text): JsonArray
+    var
+        JsonToken: JsonToken;
+    begin
+        JsonObject.SelectToken(Path, JsonToken);
         exit(JsonToken.AsArray());
     end;
 }
