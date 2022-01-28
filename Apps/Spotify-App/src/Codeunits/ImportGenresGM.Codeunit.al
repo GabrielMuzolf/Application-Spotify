@@ -24,10 +24,10 @@ codeunit 50503 "Import Genres GM"
 
     local procedure GetGenresArray() Categories: JsonArray;
     var
-        Response: JsonObject;
+        ResponseBody: JsonObject;
     begin
-        Response.ReadFrom(SendRequestToGetGenres());
-        Categories := JSONUtilityGM.GetJSONArray(Response, 'genres');
+        ResponseBody.ReadFrom(SendRequestToGetGenres());
+        Categories := JSONUtilityGM.GetJSONArray(ResponseBody, 'genres');
     end;
 
     local procedure SendRequestToGetGenres(): Text
