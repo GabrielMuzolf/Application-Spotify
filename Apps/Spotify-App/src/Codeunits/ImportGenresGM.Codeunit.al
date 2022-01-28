@@ -72,7 +72,7 @@ codeunit 50503 "Import Genres GM"
     begin
         GenreGM.Init();
         GenreGM.Name := CopyStr(GenreName, 1, 50);
-        if GenreGM.Insert() then;
+        GenreGM.Insert();
     end;
 }
 
