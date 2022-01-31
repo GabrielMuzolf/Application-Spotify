@@ -8,8 +8,9 @@ codeunit 50504 "JSON Utility GM"
         JsonToken: JsonToken;
         JsonValue: JsonValue;
     begin
-        JsonObject.Get("Key", JsonToken);
+        if not JsonObject.Get("Key", JsonToken) then exit;
         JsonValue := JsonToken.AsValue();
+        if JsonValue.IsNull() then exit;
         exit(JsonValue.AsText());
     end;
 
@@ -18,8 +19,9 @@ codeunit 50504 "JSON Utility GM"
         JsonToken: JsonToken;
         JsonValue: JsonValue;
     begin
-        JsonObject.SelectToken(Path, JsonToken);
+        if not JsonObject.SelectToken(Path, JsonToken) then exit;
         JsonValue := JsonToken.AsValue();
+        if JsonValue.IsNull() then exit;
         exit(JsonValue.AsText());
     end;
 
@@ -28,8 +30,9 @@ codeunit 50504 "JSON Utility GM"
         JsonToken: JsonToken;
         JsonValue: JsonValue;
     begin
-        JsonObject.Get("Key", JsonToken);
+        if not JsonObject.Get("Key", JsonToken) then exit;
         JsonValue := JsonToken.AsValue();
+        if JsonValue.IsNull then exit;
         exit(JsonValue.AsInteger());
     end;
 
@@ -38,7 +41,7 @@ codeunit 50504 "JSON Utility GM"
         JsonToken: JsonToken;
         JsonValue: JsonValue;
     begin
-        JsonObject.SelectToken(Path, JsonToken);
+        if not JsonObject.SelectToken(Path, JsonToken) then exit;
         JsonValue := JsonToken.AsValue();
         exit(JsonValue.AsInteger());
     end;
@@ -47,7 +50,7 @@ codeunit 50504 "JSON Utility GM"
     var
         JsonToken: JsonToken;
     begin
-        JsonObject.Get("Key", JsonToken);
+        if not JsonObject.Get("Key", JsonToken) then exit;
         exit(JsonToken.AsArray());
     end;
 
@@ -55,7 +58,7 @@ codeunit 50504 "JSON Utility GM"
     var
         JsonToken: JsonToken;
     begin
-        JsonObject.SelectToken(Path, JsonToken);
+        if not JsonObject.SelectToken(Path, JsonToken) then exit;
         exit(JsonToken.AsArray());
     end;
 }

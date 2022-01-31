@@ -9,7 +9,7 @@ table 50504 "Artist Genre GM"
             DataClassification = CustomerContent;
             TableRelation = "Artist GM";
         }
-        field(2; "Genre Name"; Text[50])
+        field(2; "Genre Name"; Text[100])
         {
             DataClassification = CustomerContent;
             TableRelation = "Genre GM";

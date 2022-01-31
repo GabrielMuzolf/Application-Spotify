@@ -92,6 +92,7 @@ codeunit 50506 "Import Artist GM"
         Images: JsonArray;
         Picture: JsonToken;
     begin
+        //TODO check before if images exists in all functions
         Images := JSONUtilityGM.GetJSONArray(Artist, 'images');
         if Images.Count() = 0 then exit;
         Images.Get(0, Picture);
@@ -110,6 +111,7 @@ codeunit 50506 "Import Artist GM"
         GenreName: JsonValue;
         i: Integer;
     begin
+        //TODO check before if genres exists
         Genres := JSONUtilityGM.GetJSONArray(Artist, 'genres');
         if Genres.Count() = 0 then exit;
         for i := 0 to Genres.Count() - 1 do begin

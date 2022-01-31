@@ -4,7 +4,7 @@ table 50502 "Genre GM"
 
     fields
     {
-        field(1; Name; Text[50])
+        field(1; Name; Text[100])
         {
             DataClassification = CustomerContent;
         }
