@@ -10,13 +10,12 @@ codeunit 50506 "Import Artist GM"
 
     internal procedure ImportArtist(ArtistId: Text[100]; IncludeArtistAlbums: Boolean)
     begin
-        // get info about albums 
-        // for each album get tracks
         SetArtistId(ArtistId);
         SetArtist();
-        DeleteArtistIfExists();
+        DeleteArtistIfExists(); //TODO add delete albums and tracks for artist, maybe trigger on delete?
         ImportArtist();
         ImportArtistGenres();
+        //TODO import artis albums if needed
     end;
 
     local procedure SetArtistId(_ArtistId: Text[100])
@@ -38,6 +37,7 @@ codeunit 50506 "Import Artist GM"
     var
         ArtistGenreGM: Record "Artist Genre GM";
     begin
+        //TODO add this to trigger instead of function
         ArtistGenreGM.SetRange("Artist Id", ArtistId);
         if not ArtistGenreGM.FindSet() then exit;
         ArtistGenreGM.DeleteAll();
@@ -78,8 +78,8 @@ codeunit 50506 "Import Artist GM"
         ArtistGM: Record "Artist GM";
     begin
         ArtistGM.Init();
-        ArtistGM.Id := CopyStr(ArtistId, 1, 100);
-        ArtistGM.Name := CopyStr(JSONUtilityGM.GetValueAsText(Artist, 'name'), 1, 100);
+        ArtistGM.Id := ArtistId;
+        ArtistGM.Name := CopyStr(JSONUtilityGM.GetValueAsText(Artist, 'name'), 1, 250);
         SetArtistPicture(ArtistGM);
         ArtistGM.Followers := JSONUtilityGM.GetValueAsIntegerFromPath(Artist, '$.followers.total');
         ArtistGM.Popularity := JSONUtilityGM.GetValueAsInteger(Artist, 'popularity');

@@ -49,9 +49,11 @@ page 50503 "Artists GM"
                 trigger OnAction()
                 var
                     ImportArtistGM: Codeunit "Import Artist GM";
+                    ImportAlbumGM: Codeunit "Import Album GM";
                 begin
                     //Message('open journal from which You can add artists with his discography');
                     ImportArtistGM.ImportArtist('2ye2Wgw4gimLv2eAKyk1NB', false);
+                    ImportAlbumGM.ImportAlbum('2zhgGiT3sNBK2rbrC7JcRW', false);
                 end;
             }
         }
