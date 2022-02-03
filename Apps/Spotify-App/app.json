@@ -21,7 +21,7 @@
     "application": "20.0.0.0",
     "idRanges": [{
         "from": 50502,
-        "to": 50510
+        "to": 50520
     }],
     "resourceExposurePolicy": {
         "allowDebugging": true,

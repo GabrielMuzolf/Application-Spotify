@@ -1,6 +1,5 @@
 table 50505 "Album GM"
 {
-    //TODO on delete remove album tracks
     DataClassification = CustomerContent;
 
     fields

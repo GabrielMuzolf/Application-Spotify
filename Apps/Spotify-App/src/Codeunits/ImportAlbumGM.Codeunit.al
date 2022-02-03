@@ -60,7 +60,6 @@ codeunit 50507 "Import Album GM"
         AlbumGM.SetRange(Id, AlbumID);
         if not AlbumGM.FindFirst() then exit;
         AlbumGM.Delete();
-        //TODO add on insert trigger to delete related informations
     end;
 
     local procedure ImportAlbum()

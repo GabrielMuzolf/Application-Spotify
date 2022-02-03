@@ -12,7 +12,7 @@ codeunit 50506 "Import Artist GM"
     begin
         SetArtistId(ArtistId);
         SetArtist();
-        DeleteArtistIfExists(); //TODO add delete albums and tracks for artist, maybe trigger on delete?
+        DeleteArtistIfExists();
         ImportArtist();
         ImportArtistGenres();
         //TODO import artis albums if needed
@@ -30,17 +30,6 @@ codeunit 50506 "Import Artist GM"
         ArtistGM.SetRange(Id, ArtistId);
         if not ArtistGM.FindFirst() then exit;
         ArtistGM.Delete();
-        DeleteArtistGenres();
-    end;
-
-    local procedure DeleteArtistGenres()
-    var
-        ArtistGenreGM: Record "Artist Genre GM";
-    begin
-        //TODO add this to trigger instead of function
-        ArtistGenreGM.SetRange("Artist Id", ArtistId);
-        if not ArtistGenreGM.FindSet() then exit;
-        ArtistGenreGM.DeleteAll();
     end;
 
     local procedure SetArtist()

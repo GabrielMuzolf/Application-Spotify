@@ -54,24 +54,15 @@ page 50502 "Genres GM"
     local procedure OpenArtistPageForGenre()
     var
         ArtistGM: Record "Artist GM";
-        ArtistGenreGM: Record "Artist Genre GM";
+        FilterUtilityGM: Codeunit "Filter Utility GM";
         ArtistsGM: Page "Artists GM";
     begin
-        ArtistGenreGM.SetRange("Genre Name", Rec.Name);
-        if not ArtistGenreGM.FindSet() then begin
-            Message('There is no artist for this genre');
+        ArtistGM.SetFilter(Id, FilterUtilityGM.GetFilterForGenreArtists(Rec));
+        if ArtistGM.IsEmpty then begin
+            Message('There is no artist for this genre'); //TODO add label
             exit;
         end;
-        ArtistGM.SetFilter(Id, ConstructFilterWithArtistId(ArtistGenreGM));
         ArtistsGM.SetRecord(ArtistGM);
         ArtistsGM.Run();
-    end;
-
-    local procedure ConstructFilterWithArtistId(var ArtistGenreGM: Record "Artist Genre GM") "Filter": Text
-    begin
-        repeat
-            "Filter" += ArtistGenreGM."Artist Id" + '|';
-        until ArtistGenreGM.Next() = 0;
-        "Filter" := CopyStr("Filter", 1, StrLen("Filter") - 1);
     end;
 }
