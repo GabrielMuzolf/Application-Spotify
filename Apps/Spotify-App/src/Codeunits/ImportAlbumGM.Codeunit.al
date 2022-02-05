@@ -8,14 +8,13 @@ codeunit 50507 "Import Album GM"
         AlbumID: Text[100];
         Album: JsonObject;
 
-    internal procedure ImportAlbum(AlbumID: Text[100]; IncludeAlbumTracks: Boolean)
+    internal procedure ImportAlbum(AlbumID: Text[100])
     begin
         SetAlbumID(AlbumID);
         SetAlbum();
         DeleteAlbumIfExists();
         ImportAlbum();
         ImportAlbumArtists();
-        //TODO import album tracks if needed
     end;
 
     local procedure SetAlbumID(_AlbumID: Text[100])

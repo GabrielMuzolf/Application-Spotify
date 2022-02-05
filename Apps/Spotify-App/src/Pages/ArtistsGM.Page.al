@@ -48,17 +48,26 @@ page 50503 "Artists GM"
 
                 trigger OnAction()
                 var
+                    TrackGM: Record "Track GM";
+                    AlbumGM: Record "Album GM";
                     ImportArtistGM: Codeunit "Import Artist GM";
                     ImportAlbumGM: Codeunit "Import Album GM";
                     ImportTrackGM: Codeunit "Import Track GM";
                     ImportArtistAlbumsGM: Codeunit "Import Artist Albums GM";
+                    ImportAlbumTracksGM: Codeunit "Import Album Tracks GM";
                 begin
+                    //  AlbumGM.DeleteAll();
                     //Message('open journal from which You can add artists with his discography');
-                    ImportArtistGM.ImportArtist('2ye2Wgw4gimLv2eAKyk1NB');
+                    //    ImportArtistGM.ImportArtist('2ye2Wgw4gimLv2eAKyk1NB');
+                    //   ImportAlbumGM.ImportAlbum('2Lq2qX3hYhiuPckC8Flj21');
+                    //   ImportAlbumGM.ImportAlbum('7h5xn0Olvx2p0eQcSt1Osy');
+                    //7h5xn0Olvx2p0eQcSt1Osy
+                    // ImportAlbumTracksGM.ImportAlbumTracks('2Lq2qX3hYhiuPckC8Flj21');
+                    //   ImportAlbumTracksGM.ImportAlbumTracks('7h5xn0Olvx2p0eQcSt1Osy');
                     // ImportAlbumGM.ImportAlbum('2Lq2qX3hYhiuPckC8Flj21', false); //2Lq2qX3hYhiuPckC8Flj21 - Master of puppets
                     // ImportTrackGM.ImportTrack('4tPHBRIPsB55nssjvKDbjj');
                     //4tPHBRIPsB55nssjvKDbjj - disposable heroes
-                    ImportArtistAlbumsGM.ImportArtistAlbums('2ye2Wgw4gimLv2eAKyk1NB');
+                    //     ImportArtistAlbumsGM.ImportArtistAlbums('2ye2Wgw4gimLv2eAKyk1NB');
                 end;
             }
         }
