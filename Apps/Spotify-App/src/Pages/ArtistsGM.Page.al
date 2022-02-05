@@ -21,6 +21,7 @@ page 50503 "Artists GM"
                 field(Name; Rec.Name)
                 {
                     ApplicationArea = All;
+                    Style = Favorable;
                     ToolTip = 'Specifies artist name';
                 }
                 field(Picture; Rec.Picture)
@@ -46,32 +47,19 @@ page 50503 "Artists GM"
     {
         area(Processing)
         {
-            action(AddArtists)
+            action("Show Albums")
             {
                 ApplicationArea = All;
+                Image = ShowMatrix;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
+                ToolTip = 'Run this action to see albums for specified artist.';
 
                 trigger OnAction()
-                var
-                    TrackGM: Record "Track GM";
-                    AlbumGM: Record "Album GM";
-                    ImportArtistGM: Codeunit "Import Artist GM";
-                    ImportAlbumGM: Codeunit "Import Album GM";
-                    ImportTrackGM: Codeunit "Import Track GM";
-                    ImportArtistAlbumsGM: Codeunit "Import Artist Albums GM";
-                    ImportAlbumTracksGM: Codeunit "Import Album Tracks GM";
                 begin
-                    //  AlbumGM.DeleteAll();
-                    //Message('open journal from which You can add artists with his discography');
-                    //    ImportArtistGM.ImportArtist('2ye2Wgw4gimLv2eAKyk1NB');
-                    //   ImportAlbumGM.ImportAlbum('2Lq2qX3hYhiuPckC8Flj21');
-                    //   ImportAlbumGM.ImportAlbum('7h5xn0Olvx2p0eQcSt1Osy');
-                    //7h5xn0Olvx2p0eQcSt1Osy
-                    // ImportAlbumTracksGM.ImportAlbumTracks('2Lq2qX3hYhiuPckC8Flj21');
-                    //   ImportAlbumTracksGM.ImportAlbumTracks('7h5xn0Olvx2p0eQcSt1Osy');
-                    // ImportAlbumGM.ImportAlbum('2Lq2qX3hYhiuPckC8Flj21', false); //2Lq2qX3hYhiuPckC8Flj21 - Master of puppets
-                    // ImportTrackGM.ImportTrack('4tPHBRIPsB55nssjvKDbjj');
-                    //4tPHBRIPsB55nssjvKDbjj - disposable heroes
-                    //     ImportArtistAlbumsGM.ImportArtistAlbums('2ye2Wgw4gimLv2eAKyk1NB');
+                    OpenAlbumsPageForArtist();
                 end;
             }
         }
@@ -80,6 +68,25 @@ page 50503 "Artists GM"
     var
         ResourceTypeGM: Enum "Resource Type GM";
     begin
+        //TODO now on after page open there is no player unt5il You change record....
         CurrPage.PlayerAddin.UpdatePlayer(Format(ResourceTypeGM::artist), Rec.Id);
+    end;
+
+    local procedure OpenAlbumsPageForArtist()
+    var
+        AlbumGM: Record "Album GM";
+        FilterUtilityGM: Codeunit "Filter Utility GM";
+        AlbumsGM: Page "Albums GM";
+        AlbumsFilter: Text;
+        NoAlbumsMsg: Label 'There is no albums for this artist.';
+    begin
+        AlbumsFilter := FilterUtilityGM.GetFilterForArtistAlbums(Rec);
+        if AlbumsFilter = '' then begin
+            Message(NoAlbumsMsg);
+            exit;
+        end;
+        AlbumGM.SetFilter(Id, AlbumsFilter);
+        AlbumsGM.SetTableView(AlbumGM);
+        AlbumsGM.Run();
     end;
 }

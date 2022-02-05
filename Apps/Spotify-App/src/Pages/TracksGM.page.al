@@ -1,13 +1,14 @@
 page 50505 "Tracks GM"
 {
+    PageType = List;
     UsageCategory = Administration;
     SourceTable = "Track GM";
     ModifyAllowed = false;
     DeleteAllowed = false;
     InsertAllowed = false;
-
     layout
     {
+
         area(Content)
         {
             usercontrol(PlayerAddin; PlayerAddin)
@@ -20,6 +21,7 @@ page 50505 "Tracks GM"
                 {
                     ApplicationArea = All;
                     ToolTip = 'Specifies tracks name';
+                    Style = Favorable;
                 }
                 field("Album Name"; Rec."Album Name")
                 {

@@ -7,7 +7,6 @@ page 50502 "Genres GM"
     ModifyAllowed = false;
     DeleteAllowed = false;
     InsertAllowed = false;
-
     layout
     {
         area(Content)
@@ -17,6 +16,7 @@ page 50502 "Genres GM"
                 field(Name; Rec.Name)
                 {
                     ApplicationArea = All;
+                    Style = Favorable;
                     ToolTip = 'Specifies genre name';
                     Caption = 'Name';
                 }
@@ -31,6 +31,11 @@ page 50502 "Genres GM"
             action("Import Genres")
             {
                 ApplicationArea = All;
+                Image = Refresh;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
                 ToolTip = 'Run this action to import predefined Spitify genres';
                 trigger OnAction()
                 var
@@ -39,30 +44,38 @@ page 50502 "Genres GM"
                     ImportCategoriesGM.ImportGenres();
                 end;
             }
-            action("Artist")
+            action("Show Artists")
             {
                 ApplicationArea = All;
+                Image = Segment;
+                Promoted = true;
+                PromotedIsBig = true;
+                PromotedOnly = true;
+                PromotedCategory = Process;
                 ToolTip = 'Run this action to see artist for specified genre';
                 trigger OnAction()
                 begin
-                    OpenArtistPageForGenre();
+                    OpenArtistsPageForGenre();
                 end;
             }
         }
     }
 
-    local procedure OpenArtistPageForGenre()
+    local procedure OpenArtistsPageForGenre()
     var
         ArtistGM: Record "Artist GM";
         FilterUtilityGM: Codeunit "Filter Utility GM";
         ArtistsGM: Page "Artists GM";
+        ArtistsFilter: Text;
+        NoArtistsMsg: Label 'There is no artist for this genre.';
     begin
-        ArtistGM.SetFilter(Id, FilterUtilityGM.GetFilterForGenreArtists(Rec));
-        if ArtistGM.IsEmpty then begin
-            Message('There is no artist for this genre'); //TODO add label
+        ArtistsFilter := FilterUtilityGM.GetFilterForGenreArtists(Rec);
+        if ArtistsFilter = '' then begin
+            Message(NoArtistsMsg);
             exit;
         end;
-        ArtistsGM.SetRecord(ArtistGM);
+        ArtistGM.SetFilter(Id, ArtistsFilter);
+        ArtistsGM.SetTableView(ArtistGM);
         ArtistsGM.Run();
     end;
 }

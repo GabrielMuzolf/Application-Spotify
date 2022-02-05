@@ -28,6 +28,19 @@ codeunit 50511 "Filter Utility GM"
         "Filter" := CopyStr("Filter", 1, StrLen("Filter") - 1);
     end;
 
+    internal procedure GetFilterForAlbumTracks(AlbumGM: Record "Album GM") "Filter": Text
+    var
+        TrackGM: Record "Track GM";
+    begin
+        TrackGM.SetRange("Album Id", AlbumGM.Id);
+        if not TrackGM.FindSet() then exit;
+        repeat
+            "Filter" += TrackGM.Id + '|'
+        until TrackGM.Next() = 0;
+        "Filter" := CopyStr("Filter", 1, StrLen("Filter") - 1);
+    end;
+
+
     local procedure RemoveLastChar(String: Text): Text
     begin
         exit(CopyStr(String, 1, StrLen(String) - 1));
