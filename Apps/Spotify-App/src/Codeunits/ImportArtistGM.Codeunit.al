@@ -1,21 +1,19 @@
 /// <summary>
-/// Codeunit used to import information about artist, his albums and tracks
+/// Codeunit used to import information about artist
 /// </summary>
 codeunit 50506 "Import Artist GM"
 {
     var
-        JSONUtilityGM: Codeunit "JSON Utility GM";
         Artist: JsonObject;
         ArtistId: Text[100];
 
-    internal procedure ImportArtist(ArtistId: Text[100]; IncludeArtistAlbums: Boolean)
+    internal procedure ImportArtist(ArtistId: Text[100])
     begin
         SetArtistId(ArtistId);
         SetArtist();
         DeleteArtistIfExists();
         ImportArtist();
         ImportArtistGenres();
-        //TODO import artis albums if needed
     end;
 
     local procedure SetArtistId(_ArtistId: Text[100])
@@ -65,6 +63,7 @@ codeunit 50506 "Import Artist GM"
     local procedure ImportArtist()
     var
         ArtistGM: Record "Artist GM";
+        JSONUtilityGM: Codeunit "JSON Utility GM";
     begin
         ArtistGM.Init();
         ArtistGM.Id := ArtistId;
@@ -78,6 +77,7 @@ codeunit 50506 "Import Artist GM"
     local procedure SetArtistPicture(var ArtistGM: Record "Artist GM")
     var
         MediaUtilityGM: Codeunit "Media Utility GM";
+        JSONUtilityGM: Codeunit "JSON Utility GM";
         Images: JsonArray;
         Picture: JsonToken;
     begin
@@ -89,12 +89,15 @@ codeunit 50506 "Import Artist GM"
     end;
 
     local procedure GetPictureUrl(Picture: JsonObject): Text
+    var
+        JSONUtilityGM: Codeunit "JSON Utility GM";
     begin
         exit(JSONUtilityGM.GetValueAsText(Picture, 'url'));
     end;
 
     local procedure ImportArtistGenres()
     var
+        JSONUtilityGM: Codeunit "JSON Utility GM";
         Genres: JsonArray;
         Genre: JsonToken;
         GenreName: JsonValue;

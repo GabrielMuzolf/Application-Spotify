@@ -5,7 +5,8 @@ codeunit 50510 "Subscribers GM"
     var
         RemovalUtilityGM: Codeunit "Removal Utility GM";
     begin
-        RemovalUtilityGM.RemoveTracksForAlbum(Rec);
+        RemovalUtilityGM.RemoveTracks(Rec);
+        RemovalUtilityGM.RemoveArtistAlbums(Rec);
     end;
 
     [EventSubscriber(ObjectType::Table, Database::"Artist GM", 'OnAfterDeleteEvent', '', false, false)]
@@ -14,6 +15,7 @@ codeunit 50510 "Subscribers GM"
         RemovalUtilityGM: Codeunit "Removal Utility GM";
     begin
         RemovalUtilityGM.RemoveArtistGenres(Rec);
+        RemovalUtilityGM.RemoveAlbums(Rec);
         RemovalUtilityGM.RemoveArtistAlbums(Rec);
     end;
 }

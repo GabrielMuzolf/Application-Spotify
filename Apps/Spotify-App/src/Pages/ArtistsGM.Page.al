@@ -51,12 +51,14 @@ page 50503 "Artists GM"
                     ImportArtistGM: Codeunit "Import Artist GM";
                     ImportAlbumGM: Codeunit "Import Album GM";
                     ImportTrackGM: Codeunit "Import Track GM";
+                    ImportArtistAlbumsGM: Codeunit "Import Artist Albums GM";
                 begin
                     //Message('open journal from which You can add artists with his discography');
-                    ImportArtistGM.ImportArtist('2ye2Wgw4gimLv2eAKyk1NB', false);
-                    ImportAlbumGM.ImportAlbum('2Lq2qX3hYhiuPckC8Flj21', false); //2Lq2qX3hYhiuPckC8Flj21 - Master of puppets
-                    ImportTrackGM.ImportTrack('4tPHBRIPsB55nssjvKDbjj');
+                    ImportArtistGM.ImportArtist('2ye2Wgw4gimLv2eAKyk1NB');
+                    // ImportAlbumGM.ImportAlbum('2Lq2qX3hYhiuPckC8Flj21', false); //2Lq2qX3hYhiuPckC8Flj21 - Master of puppets
+                    // ImportTrackGM.ImportTrack('4tPHBRIPsB55nssjvKDbjj');
                     //4tPHBRIPsB55nssjvKDbjj - disposable heroes
+                    ImportArtistAlbumsGM.ImportArtistAlbums('2ye2Wgw4gimLv2eAKyk1NB');
                 end;
             }
         }

@@ -3,7 +3,7 @@
 /// </summary>
 codeunit 50509 "Removal Utility GM"
 {
-    internal procedure RemoveTracksForAlbum(AlbumGM: Record "Album GM")
+    internal procedure RemoveTracks(AlbumGM: Record "Album GM")
     var
         TrackGM: Record "Track GM";
     begin
@@ -17,11 +17,11 @@ codeunit 50509 "Removal Utility GM"
         ArtistGenreGM: Record "Artist Genre GM";
     begin
         ArtistGenreGM.SetRange("Artist Id", ArtistGM.Id);
-        if not ArtistGenreGM.FindSet() then
+        if ArtistGenreGM.FindSet() then
             ArtistGenreGM.DeleteAll();
     end;
 
-    internal procedure RemoveArtistAlbums(ArtistGM: Record "Artist GM")
+    internal procedure RemoveAlbums(ArtistGM: Record "Artist GM")
     var
         AlbumGM: Record "Album GM";
         FilterUtilityGM: Codeunit "Filter Utility GM";
@@ -29,5 +29,23 @@ codeunit 50509 "Removal Utility GM"
         AlbumGM.SetFilter(Id, FilterUtilityGM.GetFilterForArtistAlbums(ArtistGM));
         if AlbumGM.FindSet() then
             AlbumGM.DeleteAll();
+    end;
+
+    internal procedure RemoveArtistAlbums(ArtistGM: Record "Artist GM")
+    var
+        AlbumArtistGM: Record "Album Artist GM";
+    begin
+        AlbumArtistGM.SetRange("Artist ID", ArtistGM.Id);
+        if AlbumArtistGM.FindSet() then
+            AlbumArtistGM.DeleteAll();
+    end;
+
+    internal procedure RemoveArtistAlbums(AlbumGM: Record "Album GM")
+    var
+        AlbumArtistGM: Record "Album Artist GM";
+    begin
+        AlbumArtistGM.SetRange("Album ID", AlbumGM.Id);
+        if AlbumArtistGM.FindSet() then
+            AlbumArtistGM.DeleteAll();
     end;
 }
