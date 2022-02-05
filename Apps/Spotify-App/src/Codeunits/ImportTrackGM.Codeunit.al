@@ -68,7 +68,6 @@ codeunit 50508 "Import Track GM"
         TrackGM.Id := TrackId;
         TrackGM.Name := CopyStr(JSONUtilityGM.GetValueAsText(Track, 'name'), 1, 250);
         TrackGM."Album Id" := CopyStr(JSONUtilityGM.GetValueAsTextFromPath(Track, '$.album.id'), 1, 100);
-        TrackGM."Preview Url" := CopyStr(JSONUtilityGM.GetValueAsText(Track, 'preview_url'), 1, 2048);
         SetTrackPicture(TrackGM);
         TrackGM.Insert();
     end;

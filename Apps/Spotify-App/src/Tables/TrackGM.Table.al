@@ -22,10 +22,6 @@ table 50507 "Track GM"
             FieldClass = FlowField;
             CalcFormula = lookup("Album GM".Name where(Id = field("Album Id")));
         }
-        field(5; "Preview Url"; Text[2048])
-        {
-            DataClassification = CustomerContent;
-        }
 
         field(10; Picture; Media)
         {
