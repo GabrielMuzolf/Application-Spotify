@@ -12,6 +12,10 @@ page 50504 "Albums GM"
     {
         area(Content)
         {
+            usercontrol(PlayerAddin; PlayerAddin)
+            {
+                ApplicationArea = All;
+            }
             repeater(Albums)
             {
                 field(Name; Rec.Name)
@@ -37,4 +41,10 @@ page 50504 "Albums GM"
             }
         }
     }
+    trigger OnAfterGetCurrRecord()
+    var
+        ResourceTypeGM: Enum "Resource Type GM";
+    begin
+        CurrPage.PlayerAddin.UpdatePlayer(Format(ResourceTypeGM::album), Rec.Id);
+    end;
 }

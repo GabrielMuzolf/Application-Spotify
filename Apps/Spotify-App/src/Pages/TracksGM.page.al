@@ -10,6 +10,10 @@ page 50505 "Tracks GM"
     {
         area(Content)
         {
+            usercontrol(PlayerAddin; PlayerAddin)
+            {
+                ApplicationArea = All;
+            }
             repeater(Tracks)
             {
                 field(Name; Rec.Name)
@@ -30,4 +34,10 @@ page 50505 "Tracks GM"
             }
         }
     }
+    trigger OnAfterGetCurrRecord()
+    var
+        ResourceTypeGM: Enum "Resource Type GM";
+    begin
+        CurrPage.PlayerAddin.UpdatePlayer(Format(ResourceTypeGM::track), Rec.Id);
+    end;
 }

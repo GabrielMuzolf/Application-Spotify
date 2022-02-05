@@ -12,6 +12,10 @@ page 50503 "Artists GM"
     {
         area(Content)
         {
+            usercontrol(PlayerAddin; PlayerAddin)
+            {
+                ApplicationArea = All;
+            }
             repeater(Artists)
             {
                 field(Name; Rec.Name)
@@ -72,4 +76,10 @@ page 50503 "Artists GM"
             }
         }
     }
+    trigger OnAfterGetCurrRecord()
+    var
+        ResourceTypeGM: Enum "Resource Type GM";
+    begin
+        CurrPage.PlayerAddin.UpdatePlayer(Format(ResourceTypeGM::artist), Rec.Id);
+    end;
 }
